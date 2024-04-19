@@ -2,53 +2,46 @@ import pytest
 import unittest.mock as mock
 from unittest.mock import patch
 
-# from src.controllers.usercontroller import UserController
-# import src.util.dao as dao
 from src.util.dao import DAO
 
-
-# @pytest.fixture
-# @patch('src.util.helpers.UserController', autospec=True)
+@pytest.fixture
+def sut():
+    dao_class = DAO("user")
+    test_dict = {"firstName": "John", "lastName": "Doe","email": "axel@gamil.com"}
+    usr = dao_class.create(test_dict)
+    yield usr
+    dao_class.delete(usr["_id"]["$oid"])
 
 @pytest.mark.lab1
-@pytest.mark.parametrize('test_dict', [({"name": "John Doe", "age": 30,"is_active": True, "data": "alex is a laundry man."})])
-def test_create(test_dict: dict):
+@pytest.mark.parametrize('expected', [({"firstName": "John", "lastName": "Doe","email": "axel@gamil.com"})])
+def test_create_valid_user(sut, expected): 
+    test_dict = sut.copy()
+    del test_dict["_id"]
+    assert test_dict == expected
+
+@pytest.mark.lab1
+@pytest.mark.parametrize('test_dict, expected', [({"lastName": "Doe","email": "axel@gamil.com"}, Exception)])
+def test_create_invalid_user(test_dict: dict, expected): 
     dao_class = DAO("user")
-    dao_class.create(dao_class, test_dict)
+    with pytest.raises(expected):
+        usr = dao_class.create(test_dict)
+        dao_class.delete(usr["_id"]["$oid"])
 
-# @pytest.mark.lab1
-# @pytest.mark.parametrize('email, expected', [({'email': 'Janedoe@example.com'}, 'Janedoe@example.com')])
-# def test_valid_email(email, expected):
-#     mocked_usercontroller = mock.MagicMock()
-#     mocked_usercontroller.find.return_value = [email]
-#     sut = UserController(mocked_usercontroller)
-#     valid_result = sut.get_user_by_email('Janedoe@example.com')
-#     assert valid_result["email"] == expected
+@pytest.mark.lab1
+@pytest.mark.parametrize('test_dict, expected', [({"firstName": "John", "lastName": "Doe","email": "axel@gamil.com", "uniqueItems": "133769"}, Exception)])
+def test_create_unique_items(test_dict: dict, expected): 
+    dao_class = DAO("user")
+    with pytest.raises(expected):
+        usr_1 = dao_class.create(test_dict)
+        usr_2 = dao_class.create(test_dict)
 
-# @pytest.mark.lab1
-# @pytest.mark.parametrize('email, expected', [([{'id': 28, 'name': 'Axel', 'email': 'Janedoe@example.com'},
-#     {'id': 42, 'name': 'Jonathan', 'email': 'Janedoe@example.com'},
-#     {'id': 69, 'name': 'Charlie', 'email': 'Janedoe@example.com'}], {'id': 28, 'name': 'Axel', 'email': 'Janedoe@example.com'})])
-# def test_multiple_valid_emails(email, expected):
-#     mocked_usercontroller = mock.MagicMock()
-#     mocked_usercontroller.find.return_value = email
-#     sut = UserController(mocked_usercontroller)
-#     valid_result = sut.get_user_by_email('Janedoe@example.com')
-#     assert valid_result == expected
+        dao_class.delete(usr_1["_id"]["$oid"])
+        dao_class.delete(usr_2["_id"]["$oid"])
 
-# @pytest.mark.lab1
-# @pytest.mark.parametrize('email, expected', [({}, None)])
-# def test_no_user_associated(email, expected):
-#     mocked_usercontroller = mock.MagicMock()
-#     mocked_usercontroller.find.return_value = [email]
-#     sut = UserController(mocked_usercontroller)
-#     valid_result = sut.get_user_by_email('Janedoe@example.com')
-#     assert valid_result == expected
-
-# @pytest.mark.lab1
-# @pytest.mark.parametrize('email, expected', [({'email': 'Janedoeexample.com'}, ValueError)])
-# def test_invalid_email(email, expected):
-#     mocked_usercontroller = mock.MagicMock()
-#     sut = UserController(mocked_usercontroller)
-#     with pytest.raises(expected):
-#         sut.get_user_by_email(email["email"])
+@pytest.mark.lab1
+@pytest.mark.parametrize('test_dict, expected', [({"firstName": "John", "lastName": "Doe","email": "axel@gamil.com", "test": 1337}, Exception)])
+def test_create_bson_complyant(test_dict: dict, expected): 
+    dao_class = DAO("user")
+    with pytest.raises(expected):
+        usr = dao_class.create(test_dict)
+        dao_class.delete(usr["_id"]["$oid"])
