@@ -27,7 +27,7 @@ def test_multiple_valid_emails(email, expected):
 @pytest.mark.parametrize('email, expected', [({}, None)])
 def test_no_user_associated(email, expected):
     mocked_usercontroller = mock.MagicMock()
-    mocked_usercontroller.find.return_value = [email]
+    mocked_usercontroller.find.return_value = email
     sut = UserController(mocked_usercontroller)
     valid_result = sut.get_user_by_email('Janedoe@example.com')
     assert valid_result == expected
