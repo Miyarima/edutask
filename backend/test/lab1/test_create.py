@@ -4,44 +4,67 @@ from unittest.mock import patch
 
 from src.util.dao import DAO
 
+TEST_USER = {
+    "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["firstName", "lastName", "email"],
+        "properties": {
+            "firstName": {
+                "bsonType": "string",
+                "description": "the first name of a user must be determined"
+            }, 
+            "lastName": {
+                "bsonType": "string",
+                "description": "the last name of a user must be determined"
+            },
+            "email": {
+                "bsonType": "string",
+                "description": "the email address of a user must be determined",
+                "uniqueItems": True
+            },
+            "tasks": {
+                "bsonType": "array",
+                "items": {
+                    "bsonType": "objectId"
+                }
+            }
+        }
+    }
+}
+
 @pytest.fixture
 def sut():
-    dao_class = DAO("user")
-    test_dict = {"firstName": "John", "lastName": "Doe","email": "axel@gamil.com"}
-    usr = dao_class.create(test_dict)
-    yield usr
-    dao_class.delete(usr["_id"]["$oid"])
+    with patch("src.util.dao.getValidator", autospec=True) as mockedGetValidator:
+        mockedGetValidator.return_value = TEST_USER
+        sut = DAO("test_user")
+        yield sut
+        sut.drop()
 
 @pytest.mark.create
-@pytest.mark.parametrize('expected', [({"firstName": "John", "lastName": "Doe","email": "axel@gamil.com"})])
-def test_create_valid_user(sut, expected): 
-    test_dict = sut.copy()
-    del test_dict["_id"]
-    assert test_dict == expected
+def test_create_valid_user(sut):
+    test_dict = {"firstName": "John", "lastName": "Doe", "email": "axel@gamil.com"}
+    usr = sut.create(test_dict)
+    del usr["_id"]
+    assert usr == test_dict
 
 @pytest.mark.create
-@pytest.mark.parametrize('test_dict, expected', [({"lastName": "Doe","email": "axel@gamil.com"}, Exception)])
-def test_create_invalid_user(test_dict: dict, expected): 
-    dao_class = DAO("user")
+def test_create_invalid_user(sut):
+    test_dict = {"lastName": "Doe","email": "axel@gamil.com"}
+    expected = Exception
     with pytest.raises(expected):
-        usr = dao_class.create(test_dict)
-        dao_class.delete(usr["_id"]["$oid"])
+        sut.create(test_dict)
 
 @pytest.mark.create
-@pytest.mark.parametrize('test_dict, expected', [({"firstName": "John", "lastName": "Doe","email": "axel@gamil.com", "uniqueItems": "133769"}, Exception)])
-def test_create_unique_items(test_dict: dict, expected): 
-    dao_class = DAO("user")
+def test_create_unique_items(sut):
+    test_dict = {"firstName": "John", "lastName": "Doe","email": "axel@gamil.com", "uniqueItems": "133769"}
+    expected = Exception
     with pytest.raises(expected):
-        usr_1 = dao_class.create(test_dict)
-        usr_2 = dao_class.create(test_dict)
-
-        dao_class.delete(usr_1["_id"]["$oid"])
-        dao_class.delete(usr_2["_id"]["$oid"])
+        usr1 = sut.create(test_dict)
+        usr2 = sut.create(test_dict)
 
 @pytest.mark.create
-@pytest.mark.parametrize('test_dict, expected', [({"firstName": "John", "lastName": "Doe","email": "axel@gamil.com", "test": 1337}, Exception)])
-def test_create_bson_complyant(test_dict: dict, expected): 
-    dao_class = DAO("user")
+def test_create_bson_compliant(sut):
+    test_dict = {"firstName": "John", "lastName": "Doe","email": "axel@gamil.com", "test": 1337}
+    expected = Exception
     with pytest.raises(expected):
-        usr = dao_class.create(test_dict)
-        dao_class.delete(usr["_id"]["$oid"])
+        usr = sut.create(test_dict)

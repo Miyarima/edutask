@@ -11,7 +11,7 @@ def test_valid_email(email = {'email': 'Janedoe@example.com'}, expected = 'Janed
     valid_result = sut.get_user_by_email('Janedoe@example.com')
     assert valid_result["email"] == expected
 
-@pytest.mark.lab1
+@pytest.mark.email
 @pytest.mark.parametrize('email, expected', [([{'id': 28, 'name': 'Axel', 'email': 'Janedoe@example.com'},
     {'id': 42, 'name': 'Jonathan', 'email': 'Janedoe@example.com'},
     {'id': 69, 'name': 'Charlie', 'email': 'Janedoe@example.com'}], {'id': 28, 'name': 'Axel', 'email': 'Janedoe@example.com'})])
@@ -38,9 +38,9 @@ def test_invalid_email(email = {'email': 'Janedoeexample.com'}, expected = Value
         sut.get_user_by_email(email["email"])
 
 @pytest.mark.email
-def test_database_failure(email = {'email': 'Janedoeexample.com'}, expected = Exception):
+def test_database_failure(email = {'email': 'Janedoe@example.com'}, expected = Exception):
     mocked_usercontroller = mock.MagicMock()
     sut = UserController(mocked_usercontroller)
-    mocked_usercontroller.find.return_value = KeyError
+    mocked_usercontroller.find.return_value = Exception
     with pytest.raises(expected):
         sut.get_user_by_email(email["email"])
