@@ -4,7 +4,6 @@ describe ("Add task to todo list", () => {
     let uid // user id
     let name // name of the user (firstName + ' ' + lastName)
     let email // email of the user
-    let todo_id // the id of todo items
     const task = "this is the first task"
 
     before(function () {
@@ -45,16 +44,8 @@ describe ("Add task to todo list", () => {
                 cy.get('p')
                     .should('contain.text', 'Click on each thumbnail in the list to add, update, or delete the todo items you have associated to this video.')
             })
-            .then(() => {
-                cy.request({
-                        method: 'GET',
-                        url: `http://localhost:5000/tasks/ofuser/${uid}`
-                    }).then((response) => {
-                        cy.log(response)
-                        todo_id = response.body[0].todos[0]._id.$oid
-                })
-            })
         })
+
     })
 
     beforeEach(function () {
@@ -65,50 +56,34 @@ describe ("Add task to todo list", () => {
 
         cy.get('form')
             .submit();
-
+        
         cy.wait(3000)
 
         cy.contains("div", "a")
             .click();
     })
 
-    it('check if todo item is unchecked', () => {
-        cy.contains('.todo-item', 'Watch video')
-                .find('.unchecked')
-                .should("have.class", "unchecked");
-
+    it('Add new todo without text', () => {
+        cy.get('.inline-form')
+            .find('input[type=text]')
+            .clear({ force: true })
+        cy.get('.inline-form')
+            .find('input[type=submit]')
+            .should("be.disabled");
     })
 
-    it('Set an todo as done', () => {
-        cy.fixture("todo_done.json").then((todo) => {
-            cy.request({
-                method: 'PUT',
-                url: `http://localhost:5000/todos/byid/${todo_id}`,
-                form: true,
-                body: todo
-            })
-        })
+    it('Add new todo with text', () => {
+        cy.get('.inline-form')
+            .find('input[type=text]')
+            .type("customer meeting at 1");
+        
+        cy.get('.inline-form')
+            .submit();
+        
+        cy.get('.todo-list')
+            .should("contain.text", "customer meeting at 1");
     })
 
-    it('Check if todo item is checked', () => {
-        cy.contains('.todo-item', 'Watch video')
-            .find('.checked')
-            .should("have.class", "checked");
-
-    })
-
-    it('Remove added item in todo list', () => {
-        cy.contains('.todo-item', 'Watch video')
-            .find('.remover')
-            .last()
-            .click();
-    
-        cy.get(".todo-list")
-            .children()
-            .should("have.length", 1);
-    })
-
-    
     after(function () {
         // clean up by deleting the user from the database
         cy.request({
